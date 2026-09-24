@@ -280,24 +280,15 @@
         const dateValue = document.getElementById('dateInput').value;
         if (!dateValue) return;
 
+        // 1. 改變日期時立刻清空畫面內容並顯示 Loading
+        document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
         showLoading();
 
         try {
             const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
             const result = await response.json();
             
-            const hasGroups = renderGroupSelect(result.groups);
-
-            if (hasGroups && result.groups.length > 0) {
-                const firstGroup = result.groups[0];
-                const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
-                if (groupResponse.ok) {
-                    const groupResult = await groupResponse.json();
-                    checkAndRenderData(groupResult.data);
-                    return;
-                }
-            }
-
+            renderGroupSelect(result.groups);
             checkAndRenderData(result.data);
 
         } catch (error) {
@@ -313,6 +304,8 @@
         const groupValue = document.getElementById('groupSelect').value;
         if (!dateValue || !groupValue) return;
 
+        // 2. 改變團體時立刻清空畫面內容並顯示 Loading
+        document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
         showLoading();
 
         try {
@@ -324,7 +317,7 @@
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
         } finally {
             hideLoading();
-            // 揀完之後將選擇框重設或維持顯示「選擇團體」（透過重新指派 disabled 預設 option）
+            // 揀完之後將選擇框重設回「選擇團體」
             document.getElementById('groupSelect').value = "";
         }
     }
