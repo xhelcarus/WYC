@@ -36,7 +36,7 @@
             margin-top: 0;
             margin-bottom: 24px;
         }
-        /* 頂部區域：日期與按鈕左右排列，按鈕靠右 */
+        /* 頂部區域：日期與下拉選單左右排列 */
         .top-row {
             display: flex;
             justify-content: space-between;
@@ -44,7 +44,9 @@
             gap: 15px;
             margin-bottom: 25px;
         }
-        input[type="date"] {
+        
+        input[type="date"], select {
+            width: 48%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid var(--border-color);
@@ -52,51 +54,39 @@
             background-color: #fafbfc;
             color: var(--text-main);
             outline: none;
+            box-sizing: border-box;
+        }
+        
+        input[type="date"] {
             flex-shrink: 0;
         }
-        /* 按鈕樣式，向右對齊 */
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-        .group-btn {
-            padding: 8px 14px;
-            font-size: 14px;
+
+        select {
             cursor: pointer;
-            border: 1px solid var(--border-color);
-            background-color: #fafbfc;
-            color: var(--primary);
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        .group-btn:hover {
-            background-color: #edf2f7;
-        }
-        .group-btn.active {
-            background-color: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-            font-weight: bold;
-        }
-        .group-btn:disabled {
-            border-color: #e2e8f0;
-            color: #a0aec0;
-            cursor: not-allowed;
-            background-color: #f7fafc;
+            text-overflow: ellipsis;
         }
 
-        /* 改為一行兩個項目的 Grid 排版 */
-        ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 兩列並排 */
-            gap: 10px; /* 項目之間的間距 */
+        select:disabled {
+            background-color: #f7fafc;
+            color: #a0aec0;
+            cursor: not-allowed;
         }
-        li {
+
+        /* 自訂 Grid 佈局結構 */
+        .grid-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .grid-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .grid-cell {
+            flex: 1;
             padding: 12px 14px;
             background: var(--list-bg);
             border: 1px solid var(--list-border);
@@ -106,25 +96,73 @@
             align-items: center;
             box-sizing: border-box;
         }
+
+        /* B2 專用：移除背景與框，粗體置中純文字 */
+        .grid-cell.b2-cell {
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            background: transparent;
+            border: none;
+            padding: 8px 0;
+        }
+
+        /* 固定的右半邊文字方塊樣式 */
+        .grid-cell.fixed-text-cell {
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* spacer 空一行 */
+        .grid-spacer {
+            height: 12px;
+        }
+
+        /* N/A 或空白項目的樣式（帶點灰階以茲識別） */
+        .grid-cell.hidden-item {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+            opacity: 0.75;
+        }
+
+        /* 可點擊互動的格仔 (B5) */
+        .clickable-cell {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .clickable-cell:hover {
+            background-color: #edf2f7;
+        }
+
+        /* B4 展開子面板 */
+        .sub-panel {
+            display: none;
+            background: #edf2f7;
+            border: 1px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: -4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
         .no-event-box {
             color: #c53030;
             padding: 20px;
             text-align: center;
             font-size: 18px;
             font-weight: bold;
-            grid-column: span 2; /* 讓「該日沒有活動」橫跨整行 */
         }
         .col-a {
             font-weight: bold;
-            color: #2d3748;
-            font-size: 14px;
+            color: #2d3748; /* A列黑色字體 */
         }
         .col-b {
-            color: var(--primary);
-            font-size: 14px;
+            color: var(--primary); /* B列藍色字體 */
         }
 
-        /* Loading 遮罩與 50% 純暗掉效果（無模糊） */
+        /* Loading 遮罩 */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -150,20 +188,22 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* 手機螢幕較小時自動轉回單行排列，確保美觀 */
         @media (max-width: 500px) {
-            ul {
-                grid-template-columns: 1fr;
+            .top-row {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .no-event-box {
-                grid-column: span 1;
+            input[type="date"], select {
+                width: 100%;
+            }
+            .grid-row {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
 
-<!-- Loading 遮罩層 (50% 暗掉) -->
 <div id="loadingOverlay" class="loading-overlay">
     <div class="spinner"></div>
 </div>
@@ -171,28 +211,23 @@
 <div class="container">
     <h2>🏝️小島活動資料🏝️</h2>
     
-    <!-- 頂部：左邊日期，右邊按鈕 -->
     <div class="top-row">
         <input type="date" id="dateInput" onchange="onDateChange()">
-        <div id="buttonGroup" class="button-group">
-            <button class="group-btn" disabled>請先選擇日期</button>
-        </div>
+        <select id="groupSelect" onchange="onGroupChange()" disabled>
+            <option value="">請先選擇日期</option>
+        </select>
     </div>
 
-    <!-- 內容顯示區域 -->
     <div class="form-group" id="contentSection">
-        <ul id="dataList">
-            <li>請稍候，正在載入今日資料...</li>
-        </ul>
+        <div id="dataGrid" class="grid-layout">
+            <div>請稍候，正在載入今日資料...</div>
+        </div>
     </div>
 </div>
 
 <script>
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbxv0AqtVVRMGoU6wFQMRKSGxufNiPHW11k1xDd49kWAMICAuV1bqf4spRnFRnKNiu8SmA/exec';
 
-    let currentSelectedGroup = '';
-
-    // 顯示與隱藏 Loading
     function showLoading() {
         document.getElementById('loadingOverlay').style.display = 'flex';
     }
@@ -200,12 +235,10 @@
         document.getElementById('loadingOverlay').style.display = 'none';
     }
 
-    // 網頁載入時自動執行
     window.onload = function() {
         setDefaultDateAndFetch();
     };
 
-    // 設定日期輸入框為今天，並自動發送請求
     function setDefaultDateAndFetch() {
         const today = new Date();
         const yyyy = today.getFullYear();
@@ -217,7 +250,6 @@
         onDateChange();
     }
 
-    // 當改變日期時
     async function onDateChange() {
         const dateValue = document.getElementById('dateInput').value;
         if (!dateValue) return;
@@ -230,12 +262,21 @@
             
             const result = await response.json();
             
-            currentSelectedGroup = result.b3 || '';
+            // 更新下拉選單
+            const hasGroups = renderGroupSelect(result.groups);
 
-            // 生成團體選擇按鈕
-            renderGroupButtons(result.groups, currentSelectedGroup);
+            // 如果有群組選項，自動選取第一個，並立刻載入該群組的詳細資料
+            if (hasGroups) {
+                const firstGroup = document.getElementById('groupSelect').value;
+                const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
+                if (groupResponse.ok) {
+                    const groupResult = await groupResponse.json();
+                    checkAndRenderData(groupResult.data);
+                    return;
+                }
+            }
 
-            // 檢查並渲染資料
+            // 若無群組或直接使用預設回傳的 data
             checkAndRenderData(result.data);
 
         } catch (error) {
@@ -246,31 +287,18 @@
         }
     }
 
-    // 當點擊某個團體按鈕時
-    async function onGroupClick(groupValue) {
+    async function onGroupChange() {
         const dateValue = document.getElementById('dateInput').value;
+        const groupValue = document.getElementById('groupSelect').value;
         if (!dateValue || !groupValue) return;
 
         showLoading();
-
-        // 更新按鈕高亮狀態
-        const buttons = document.querySelectorAll('.group-btn');
-        buttons.forEach(btn => {
-            if (btn.textContent === groupValue) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
 
         try {
             const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(groupValue)}`);
             if (!response.ok) throw new Error('網絡回應錯誤');
             
             const result = await response.json();
-            currentSelectedGroup = result.b3;
-
-            // 檢查並渲染資料
             checkAndRenderData(result.data);
 
         } catch (error) {
@@ -280,31 +308,30 @@
         }
     }
 
-    // 渲染團體按鈕
-    function renderGroupButtons(groups, activeGroup) {
-        const buttonGroup = document.getElementById('buttonGroup');
-        buttonGroup.innerHTML = '';
+    function renderGroupSelect(groups) {
+        const groupSelect = document.getElementById('groupSelect');
+        groupSelect.innerHTML = '';
 
         if (groups && groups.length > 0) {
+            groupSelect.disabled = false;
             groups.forEach(group => {
-                let btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'group-btn';
-                btn.textContent = group;
-
-                if (group === activeGroup) {
-                    btn.classList.add('active');
-                }
-
-                btn.onclick = () => onGroupClick(group);
-                buttonGroup.appendChild(btn);
+                let option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                groupSelect.appendChild(option);
             });
+            groupSelect.value = groups[0]; // 預設選擇第一個
+            return true;
         } else {
-            buttonGroup.innerHTML = '<button class="group-btn" disabled>當日無額外團體選項</button>';
+            groupSelect.disabled = true;
+            let option = document.createElement('option');
+            option.value = "";
+            option.textContent = "當日無額外團體選項";
+            groupSelect.appendChild(option);
+            return false;
         }
     }
 
-    // 優先檢查第一項是否為 N/A，若是則直接顯示「該日沒有活動」並終止
     function checkAndRenderData(dataArray) {
         const contentSection = document.getElementById('contentSection');
 
@@ -313,41 +340,197 @@
             return;
         }
 
-        // 取得第一項（即對應 B2，即 dataArray 的第一個元素）的 B 欄內容
-        let firstItemB = dataArray[0].b !== undefined ? String(dataArray[0].b).trim().toUpperCase() : '';
-
-        // 如果第一項包含 N/A，最高優先級判定：直接顯示「該日沒有活動」，不再看後面
-        if (firstItemB.includes('N/A')) {
+        // B2 = N/A 優先程度放到最高檢測
+        let firstItemB = dataArray[0] && dataArray[0].b !== undefined ? String(dataArray[0].b).trim().toUpperCase() : '';
+        if (firstItemB.includes('N/A') || firstItemB === '') {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
             return;
         }
 
-        // 正常顯示表格（過濾掉其他細項中可能包含的空白或 N/A）
-        contentSection.innerHTML = '<ul id="dataList"></ul>';
-        const dataList = document.getElementById('dataList');
-        
-        let validItemCount = 0;
-
-        dataArray.forEach((item, index) => {
+        // 建立 Helper 函數去產生對應的格仔元素
+        function createCell(idx) {
+            let item = dataArray[idx] || { a: '', b: '' };
             let textB = item.b !== undefined ? String(item.b).trim() : '';
             let upperTextB = textB.toUpperCase();
-
-            // 如果其他行內容包含 N/A 或空白，則跳過不顯示
-            if (upperTextB.includes('N/A') || textB === '') {
-                return;
-            }
-
-            let rowNum = index + 2;
+            let rowNum = idx + 2;
             let textA = item.a !== '' ? item.a : `(A${rowNum} 空白)`;
 
-            let li = document.createElement('li');
-            li.innerHTML = `<span class="col-a">${textA}</span> <span class="col-b">${textB}</span>`;
-            dataList.appendChild(li);
-            validItemCount++;
-        });
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.innerHTML = `<span class="col-a">${textA}</span> <span class="col-b">${textB}</span>`;
 
-        if (validItemCount === 0) {
-            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            if (upperTextB.includes('N/A') || textB === '') {
+                cell.classList.add('hidden-item');
+            }
+            return cell;
+        }
+
+        // 建立固定右側文字方塊的 Helper 函數
+        function createFixedCell(text) {
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell fixed-text-cell';
+            cell.textContent = text;
+            return cell;
+        }
+
+        contentSection.innerHTML = `<div id="dataGrid" class="grid-layout"></div>`;
+        const dataGrid = document.getElementById('dataGrid');
+
+        // 第一行：B3、B5（其中點擊 B5 可以展開 B4）
+        let row1 = document.createElement('div');
+        row1.className = 'grid-row';
+        let cellB3 = createCell(1);
+        let cellB5 = createCell(3);
+        cellB5.classList.add('clickable-cell');
+        cellB5.onclick = toggleB4Panel;
+        row1.appendChild(cellB3);
+        row1.appendChild(cellB5);
+        dataGrid.appendChild(row1);
+
+        // B4 隱藏展開面板
+        let b4Item = dataArray[2] || { a: '', b: '' };
+        let b4TextB = b4Item.b !== undefined ? String(b4Item.b).trim() : '';
+        let b4TextA = b4Item.a !== '' ? b4Item.a : `(A4 空白)`;
+        let subPanel = document.createElement('div');
+        subPanel.id = 'b4SubPanel';
+        subPanel.className = 'sub-panel';
+        subPanel.innerHTML = `<span class="col-a">${b4TextA}:</span> <span class="col-b">${b4TextB}</span>`;
+        dataGrid.appendChild(subPanel);
+
+        // 第二行：三個格子 —— 左邊 B9，中間「入營」，右邊「出營」
+        let row2 = document.createElement('div');
+        row2.className = 'grid-row';
+        
+        // 1. 左邊格子：B9
+        row2.appendChild(createCell(7));
+
+        // 2. 處理 B8 拆分出「入營」與「出營」 (左右分明，支援 - 或 /)
+        let b8Item = dataArray[6] || { a: '', b: '' };
+        let b8TextB = b8Item.b !== undefined ? String(b8Item.b).trim() : '';
+        let entryTime = '--';
+        let exitTime = '--';
+
+        if (b8TextB !== '' && !b8TextB.toUpperCase().includes('N/A')) {
+            let separator = b8TextB.includes('-') ? '-' : (b8TextB.includes('/') ? '/' : null);
+            
+            if (separator) {
+                let parts = b8TextB.split(separator);
+                if (parts[0]) {
+                    let cleanEntry = parts[0].replace(/[^0-9]/g, '');
+                    if (cleanEntry !== '') entryTime = cleanEntry;
+                }
+                if (parts[1]) {
+                    let cleanExit = parts[1].replace(/[^0-9]/g, '');
+                    if (cleanExit !== '') exitTime = cleanExit;
+                }
+            } else {
+                let cleanText = b8TextB.replace(/[^0-9]/g, '');
+                entryTime = cleanText !== '' ? cleanText : b8TextB;
+            }
+        }
+
+        // 中間格子：入營
+        let cellEntry = document.createElement('div');
+        cellEntry.className = 'grid-cell';
+        cellEntry.innerHTML = `<span class="col-a">入營</span> <span class="col-b">${entryTime}</span>`;
+        if (b8TextB.toUpperCase().includes('N/A') || b8TextB === '' || entryTime === '--') {
+            cellEntry.classList.add('hidden-item');
+        }
+        row2.appendChild(cellEntry);
+
+        // 右邊格子：出營
+        let cellExit = document.createElement('div');
+        cellExit.className = 'grid-cell';
+        cellExit.innerHTML = `<span class="col-a">出營</span> <span class="col-b">${exitTime}</span>`;
+        if (b8TextB.toUpperCase().includes('N/A') || b8TextB === '' || exitTime === '--') {
+            cellExit.classList.add('hidden-item');
+        }
+        row2.appendChild(cellExit);
+
+        dataGrid.appendChild(row2);
+
+        // 第三行：B6（單獨一行，若 N/A 則自動隱藏）
+        let cellB6 = createCell(4);
+        let textB6 = dataArray[4] && dataArray[4].b !== undefined ? String(dataArray[4].b).trim().toUpperCase() : '';
+        let row3 = document.createElement('div');
+        row3.className = 'grid-row';
+        cellB6.style.flex = '1';
+        row3.appendChild(cellB6);
+        dataGrid.appendChild(row3);
+        if (textB6.includes('N/A') || textB6 === '') {
+            row3.style.display = 'none';
+        }
+
+        // 第四行：B7（單獨一行，若 N/A 則自動隱藏）
+        let cellB7 = createCell(5);
+        let textB7 = dataArray[5] && dataArray[5].b !== undefined ? String(dataArray[5].b).trim().toUpperCase() : '';
+        let row4 = document.createElement('div');
+        row4.className = 'grid-row';
+        cellB7.style.flex = '1';
+        row4.appendChild(cellB7);
+        dataGrid.appendChild(row4);
+        if (textB7.includes('N/A') || textB7 === '') {
+            row4.style.display = 'none';
+        }
+
+        // 第五行：留白（空一行）
+        let spacer = document.createElement('div');
+        spacer.className = 'grid-spacer';
+        dataGrid.appendChild(spacer);
+
+        // 第六行：B2（移除外框與背景 box，只保留純文字粗體置中）
+        let row6 = document.createElement('div');
+        row6.className = 'grid-row';
+        let b2Item = dataArray[0] || { b: '' };
+        let b2TextB = b2Item.b !== undefined ? String(b2Item.b).trim() : '';
+        let cellB2 = document.createElement('div');
+        cellB2.className = 'grid-cell b2-cell col-b';
+        cellB2.style.flex = '1';
+        cellB2.textContent = b2TextB;
+        row6.appendChild(cellB2);
+        dataGrid.appendChild(row6);
+
+        // 第七行：B10、B15
+        let row7 = document.createElement('div');
+        row7.className = 'grid-row';
+        row7.appendChild(createCell(8));
+        row7.appendChild(createCell(13));
+        dataGrid.appendChild(row7);
+
+        // 第八行：B11、B16
+        let row8 = document.createElement('div');
+        row8.className = 'grid-row';
+        row8.appendChild(createCell(9));
+        row8.appendChild(createCell(14));
+        dataGrid.appendChild(row8);
+
+        // 第九行：B12、文字：早餐 0830
+        let row9 = document.createElement('div');
+        row9.className = 'grid-row';
+        row9.appendChild(createCell(10));
+        row9.appendChild(createFixedCell('早餐 0830'));
+        dataGrid.appendChild(row9);
+
+        // 第十行：B13、文字：午餐 1230
+        let row10 = document.createElement('div');
+        row10.className = 'grid-row';
+        row10.appendChild(createCell(11));
+        row10.appendChild(createFixedCell('午餐 1230'));
+        dataGrid.appendChild(row10);
+
+        // 第十一行：B14、文字：晚餐 0600
+        let row11 = document.createElement('div');
+        row11.className = 'grid-row';
+        row11.appendChild(createCell(12));
+        row11.appendChild(createFixedCell('晚餐 0600'));
+        dataGrid.appendChild(row11);
+    }
+
+    // 點擊 B5 展開/收合 B4 面板
+    function toggleB4Panel() {
+        const panel = document.getElementById('b4SubPanel');
+        if (panel) {
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
         }
     }
 </script>
