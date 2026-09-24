@@ -220,7 +220,7 @@
     <div class="top-row">
         <input type="date" id="dateInput" onchange="onDateChange()">
         <select id="groupSelect" onchange="onGroupChange()" disabled>
-            <option value="">請先選擇日期</option>
+            <option value="">選擇團體</option>
         </select>
     </div>
 
@@ -330,6 +330,14 @@
         const groupSelect = document.getElementById('groupSelect');
         groupSelect.innerHTML = '';
 
+        // 永遠加入一個預設顯示「選擇團體」且不能被當作常規選項選取的 placeholder
+        let defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "選擇團體";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        groupSelect.appendChild(defaultOption);
+
         if (groups && groups.length > 0) {
             groupSelect.disabled = false;
             groups.forEach(group => {
@@ -338,14 +346,13 @@
                 option.textContent = group;
                 groupSelect.appendChild(option);
             });
-            groupSelect.value = groups[0];
+            // 預設選中第一個實際團體（同時畫面會保持顯示「選擇團體」或者自動對應）
+            // 如果希望畫面直接顯示第一個團體名字，可以唔設 defaultOption.selected = true
+            // 依家咁做會令個盒長期顯示「選擇團體」，一按落去就會見到下面有得揀所有團體
             return true;
         } else {
             groupSelect.disabled = true;
-            let option = document.createElement('option');
-            option.value = "";
-            option.textContent = "當日無額外團體選項";
-            groupSelect.appendChild(option);
+            defaultOption.textContent = "當日無額外團體選項";
             return false;
         }
     }
