@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏝️小島活動資料🏝️</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --text-main: #2c3e50;
+            --border-color: #d1d8e0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: var(--container-bg);
+            padding: 24px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        }
+        h2 {
+            text-align: center;
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+        /* 頂部區域：日期與下拉選單左右排列 */
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        input[type="date"], select {
+            flex: 1;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fafbfc;
+            color: var(--text-main);
+            outline: none;
+            box-sizing: border-box;
+            -webkit-appearance: none; /* 修正 iPhone Chrome 外觀過闊或變形問題 */
+            appearance: none;
+        }
+
+        select {
+            cursor: pointer;
+            text-overflow: ellipsis;
+            text-align: center;       /* 下拉選單文字置中 (標準瀏覽器) */
+            text-align-last: center;  /* 下拉選單文字置中 (Safari / Chrome 選擇後狀態) */
+        }
+
+        select:disabled {
+            background-color: #f7fafc;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        /* 自訂 Grid 佈局結構 */
+        .grid-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .grid-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .grid-cell {
+            flex: 1;
+            padding: 12px 14px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        /* B2 專用：移除背景與框，粗體置中純文字 */
+        .grid-cell.b2-cell {
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            background: transparent;
+            border: none;
+            padding: 8px 0;
+        }
+
+        /* spacer 空一行 */
+        .grid-spacer {
+            height: 12px;
+        }
+
+        /* N/A 或空白項目的樣式（帶點灰階以茲識別） */
+        .grid-cell.hidden-item {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+            opacity: 0.75;
+        }
+
+        /* 可點擊互動的格仔 (B5) */
+        .clickable-cell {
+            cursor: pointer;
+        }
+        /* 展開時的動態顏色 class */
+        .grid-cell.active-cell {
+            background-color: #edf2f7;
+        }
+
+        /* B4 展開子面板：A列靠右、B列靠左，字體細一號 */
+        .sub-panel {
+            display: none;
+            background: #edf2f7;
+            border: 1px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-top: -4px;
+            margin-bottom: 8px;
+            font-size: 14px; /* 比人數(16px)細一號 */
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .no-event-box {
+            color: #c53030;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* A列防止被擠壓，確保標題完整顯示 */
+        .col-a {
+            font-weight: bold;
+            color: #2d3748;
+            flex-shrink: 0;       /* 絕對不允許被壓窄 */
+            white-space: nowrap;  /* 不自動換行 */
+            margin-right: 12px;   /* 與 B 列保持安全距離 */
+        }
+
+        /* B列允許長字自動換行，且帶有最小寬度防破版 */
+        .col-b {
+            color: #4a7bb0;
+            word-break: break-all;
+            min-width: 0;
+            text-align: right;
+        }
+
+        /* Loading 遮罩（鎖死畫面防滑動） */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            touch-action: none;
+            pointer-events: auto;
+            overscroll-behavior: none;
+        }
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 500px) {
+            .top-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            input[type="date"], select {
+                width: 100%;
+            }
+            .grid-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay" class="loading-overlay" ontouchmove="event.preventDefault()" onwheel="event.preventDefault()">
+    <div class="spinner"></div>
+</div>
+
+<div class="container">
+    <h2>🏝️小島活動資料🏝️</h2>
+    
+    <div class="top-row">
+        <input type="date" id="dateInput" onchange="onDateChange()">
+        <select id="groupSelect" onchange="onGroupChange()" disabled>
+            <option value="">請先選擇日期</option>
+        </select>
+    </div>
+
+    <div class="form-group" id="contentSection">
+        <div id="dataGrid" class="grid-layout"></div>
+    </div>
+</div>
+
+<script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxv0AqtVVRMGoU6wFQMRKSGxufNiPHW11k1xDd49kWAMICAuV1bqf4spRnFRnKNiu8SmA/exec';
+
+    const customANames = [
+        "Code",       // Row 2 (B2)
+        "團體",       // Row 3 (B3)
+        "年齡",       // Row 4 (B4)
+        "人數",       // Row 5 (B5)
+        "目標",       // Row 6 (B6)
+        "備註",       // Row 7 (B7)
+        "船時間",     // Row 8 (B8)
+        "船公司",     // Row 9 (B9)
+        "D1 朝早",    // Row 10 (B10)
+        "D1 晏晝",    // Row 11 (B11)
+        "D1 晏晝",    // Row 12 (B12) - 預設標題，若 B11 有資料會自動變空格
+        "D1 夜晚",    // Row 13 (B13)
+        "",           // Row 14 (B14) - 空格標題
+        "D2 朝早",    // Row 15 (B15)
+        "D2 晏晝"     // Row 16 (B16)
+    ];
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    window.onload = function() {
+        setDefaultDateAndFetch();
+    };
+
+    function setDefaultDateAndFetch() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayString = `${yyyy}-${mm}-${dd}`;
+
+        document.getElementById('dateInput').value = todayString;
+        onDateChange();
+    }
+
+    async function onDateChange() {
+        document.getElementById('dateInput').blur();
+
+        const dateValue = document.getElementById('dateInput').value;
+        if (!dateValue) return;
+
+        showLoading();
+
+        try {
+            const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
+            const result = await response.json();
+            
+            const hasGroups = renderGroupSelect(result.groups);
+
+            if (hasGroups) {
+                const firstGroup = document.getElementById('groupSelect').value;
+                const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
+                if (groupResponse.ok) {
+                    const groupResult = await groupResponse.json();
+                    checkAndRenderData(groupResult.data);
+                    return;
+                }
+            }
+
+            checkAndRenderData(result.data);
+
+        } catch (error) {
+            document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function onGroupChange() {
+        const dateValue = document.getElementById('dateInput').value;
+        const groupValue = document.getElementById('groupSelect').value;
+        if (!dateValue || !groupValue) return;
+
+        showLoading();
+
+        try {
+            const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(groupValue)}`);
+            const result = await response.json();
+            checkAndRenderData(result.data);
+
+        } catch (error) {
+            document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function renderGroupSelect(groups) {
+        const groupSelect = document.getElementById('groupSelect');
+        groupSelect.innerHTML = '';
+
+        if (groups && groups.length > 0) {
+            groupSelect.disabled = false;
+            groups.forEach(group => {
+                let option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                groupSelect.appendChild(option);
+            });
+            groupSelect.value = groups[0];
+            return true;
+        } else {
+            groupSelect.disabled = true;
+            let option = document.createElement('option');
+            option.value = "";
+            option.textContent = "當日無額外團體選項";
+            groupSelect.appendChild(option);
+            return false;
+        }
+    }
+
+    function checkAndRenderData(dataArray) {
+        const contentSection = document.getElementById('contentSection');
+
+        if (!dataArray || dataArray.length === 0) {
+            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            return;
+        }
+
+        let firstItemB = (dataArray[0] && dataArray[0].b !== undefined && dataArray[0].b !== null) 
+            ? String(dataArray[0].b).trim().toUpperCase() 
+            : '';
+            
+        if (firstItemB === '' || firstItemB.includes('N/A')) {
+            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            return;
+        }
+
+        let b15Item = dataArray[13] || { b: '' };
+        let b16Item = dataArray[14] || { b: '' };
+        let b15Text = b15Item.b !== undefined && b15Item.b !== null ? String(b15Item.b).trim().toUpperCase() : '';
+        let b16Text = b16Item.b !== undefined && b16Item.b !== null ? String(b16Item.b).trim().toUpperCase() : '';
+        let areB15B16NA = (b15Text === '' || b15Text.includes('N/A')) && (b16Text === '' || b16Text.includes('N/A'));
+
+        let dynamicANames = [...customANames];
+        if (areB15B16NA) {
+            dynamicANames[8] = "朝早";   
+            dynamicANames[9] = "晏晝";   
+            dynamicANames[10] = "晏晝";  
+        }
+
+        function createCell(idx) {
+            let item = dataArray[idx] || { b: '' };
+            let textB = item.b !== undefined && item.b !== null ? String(item.b).trim() : '';
+            let upperTextB = textB.toUpperCase();
+            
+            let textA = dynamicANames[idx] !== undefined ? dynamicANames[idx] : '';
+
+            if (idx === 10) {
+                let b11Val = dataArray[9] && dataArray[9].b !== undefined && dataArray[9].b !== null ? String(dataArray[9].b).trim().toUpperCase() : '';
+                let hasB11 = (b11Val !== '' && !b11Val.includes('N/A'));
+                if (hasB11) {
+                    textA = "";
+                } else if (areB15B16NA) {
+                    textA = "晏晝";
+                }
+            }
+
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell';
+
+            cell.innerHTML = `<span class="col-a">${textA}</span> <span class="col-b">${textB}</span>`;
+
+            if ((upperTextB.includes('N/A') || textB === '') && textB !== '-') {
+                cell.classList.add('hidden-item');
+            }
+            return cell;
+        }
+
+        function createFullWidthCell(idx) {
+            let cell = createCell(idx);
+            cell.style.flex = '1';
+            return cell;
+        }
+
+        contentSection.innerHTML = `<div id="dataGrid" class="grid-layout"></div>`;
+        const dataGrid = document.getElementById('dataGrid');
+
+        // Row 1 (B3, B5)
+        let row1 = document.createElement('div');
+        row1.className = 'grid-row';
+        let cellB3 = createCell(1);
+        let cellB5 = createCell(3);
+        cellB5.classList.add('clickable-cell');
+        cellB5.id = 'cellB5';
+        cellB5.onclick = toggleB4Panel;
+        row1.appendChild(cellB3);
+        row1.appendChild(cellB5);
+        dataGrid.appendChild(row1);
+
+        // B4 Sub Panel (A列靠右、B列靠左，字體細一號)
+        let b4Item = dataArray[2] || { b: '' };
+        let b4TextB = b4Item.b !== undefined && b4Item.b !== null ? String(b4Item.b).trim() : '';
+        let b4TextA = dynamicANames[2] !== undefined ? dynamicANames[2] : '年齡';
+        let subPanel = document.createElement('div');
+        subPanel.id = 'b4SubPanel';
+        subPanel.className = 'sub-panel';
+        subPanel.innerHTML = `<span class="col-a">${b4TextA}</span> <span class="col-b">${b4TextB}</span>`;
+        dataGrid.appendChild(subPanel);
+
+        let hasB15OrB16 = !areB15B16NA;
+
+        // B9, 入營, 離營
+        let row2 = document.createElement('div');
+        row2.className = 'grid-row';
+        row2.appendChild(createCell(7));
+
+        let b8Item = dataArray[6] || { b: '' };
+        let b8TextB = b8Item.b !== undefined && b8Item.b !== null ? String(b8Item.b).trim() : '';
+        let entryTime = '--';
+        let exitTime = '--';
+
+        if (b8TextB !== '' && !b8TextB.toUpperCase().includes('N/A')) {
+            let separator = b8TextB.includes('-') ? '-' : (b8TextB.includes('/') ? '/' : null);
+            
+            if (separator) {
+                let parts = b8TextB.split(separator);
+                if (parts[0]) {
+                    let cleanEntry = parts[0].replace(/[^0-9]/g, '');
+                    if (cleanEntry.length === 4) entryTime = cleanEntry;
+                }
+                if (parts[1]) {
+                    let cleanExit = parts[1].replace(/[^0-9]/g, '');
+                    if (cleanExit.length === 4) exitTime = cleanExit;
+                }
+            } else {
+                let cleanText = b8TextB.replace(/[^0-9]/g, '');
+                if (cleanText.length === 4) entryTime = cleanText;
+            }
+        }
+
+        let hasB15 = (b15Text !== '' && !b15Text.includes('N/A'));
+        let hasB16 = (b16Text !== '' && !b16Text.includes('N/A'));
+        if ((hasB15 || hasB16) && exitTime !== '--') {
+            exitTime = '翌日 ' + exitTime;
+        }
+
+        let cellEntry = document.createElement('div');
+        cellEntry.className = 'grid-cell';
+        cellEntry.innerHTML = `<span class="col-a">入營</span> <span class="col-b">${entryTime}</span>`;
+        if (entryTime === '--') {
+            cellEntry.classList.add('hidden-item');
+        }
+        row2.appendChild(cellEntry);
+
+        let cellExit = document.createElement('div');
+        cellExit.className = 'grid-cell';
+        cellExit.innerHTML = `<span class="col-a">離營</span> <span class="col-b">${exitTime}</span>`;
+        if (exitTime === '--') {
+            cellExit.classList.add('hidden-item');
+        }
+        row2.appendChild(cellExit);
+
+        dataGrid.appendChild(row2);
+
+        // B6 (目標)
+        let cellB6 = createFullWidthCell(4);
+        let textB6 = dataArray[4] && dataArray[4].b !== undefined && dataArray[4].b !== null ? String(dataArray[4].b).trim().toUpperCase() : '';
+        let row3 = document.createElement('div');
+        row3.className = 'grid-row';
+        row3.appendChild(cellB6);
+        dataGrid.appendChild(row3);
+        if (textB6.includes('N/A') || textB6 === '') {
+            row3.style.display = 'none';
+        }
+
+        // B7 (備註)
+        let cellB7 = createFullWidthCell(5);
+        let textB7 = dataArray[5] && dataArray[5].b !== undefined && dataArray[5].b !== null ? String(dataArray[5].b).trim().toUpperCase() : '';
+        let row4 = document.createElement('div');
+        row4.className = 'grid-row';
+        row4.appendChild(cellB7);
+        dataGrid.appendChild(row4);
+        if (textB7.includes('N/A') || textB7 === '') {
+            row4.style.display = 'none';
+        }
+
+        let spacer1 = document.createElement('div');
+        spacer1.className = 'grid-spacer';
+        dataGrid.appendChild(spacer1);
+
+        // 第 1 行：Code (B2)
+        let rowCode = document.createElement('div');
+        rowCode.className = 'grid-row';
+        let b2Item = dataArray[0] || { b: '' };
+        let b2TextB = b2Item.b !== undefined && b2Item.b !== null ? String(b2Item.b).trim() : '';
+        let cellB2 = document.createElement('div');
+        cellB2.className = 'grid-cell b2-cell col-b';
+        cellB2.style.flex = '1';
+        cellB2.textContent = b2TextB;
+        rowCode.appendChild(cellB2);
+        dataGrid.appendChild(rowCode);
+
+        // 第 2 行：對應 B10 (dataArray[8])
+        let row2nd = document.createElement('div');
+        row2nd.className = 'grid-row';
+        row2nd.appendChild(createFullWidthCell(8));
+        dataGrid.appendChild(row2nd);
+
+        // 第 3 行：對應 B11 (dataArray[9])
+        let row3rd = document.createElement('div');
+        row3rd.className = 'grid-row';
+        row3rd.appendChild(createFullWidthCell(9));
+        dataGrid.appendChild(row3rd);
+
+        // 第 4 行：對應 B12 (dataArray[10])
+        let row4th = document.createElement('div');
+        row4th.className = 'grid-row';
+        row4th.appendChild(createFullWidthCell(10));
+        dataGrid.appendChild(row4th);
+
+        // 第 5 行：對應 B13 (dataArray[11])
+        let row5th = document.createElement('div');
+        row5th.className = 'grid-row';
+        row5th.appendChild(createFullWidthCell(11));
+        dataGrid.appendChild(row5th);
+
+        // 第 6 行：對應 B14 (dataArray[12])
+        let row6th = document.createElement('div');
+        row6th.className = 'grid-row';
+        row6th.appendChild(createFullWidthCell(12));
+        dataGrid.appendChild(row6th);
+
+        let spacer2 = document.createElement('div');
+        spacer2.className = 'grid-spacer';
+        dataGrid.appendChild(spacer2);
+
+        // 第 7 行：對應 B15 (dataArray[13])
+        let row7th = document.createElement('div');
+        row7th.className = 'grid-row';
+        row7th.appendChild(createFullWidthCell(13));
+        dataGrid.appendChild(row7th);
+
+        // 第 8 行：對應 B16 (dataArray[14])
+        let row8th = document.createElement('div');
+        row8th.className = 'grid-row';
+        row8th.appendChild(createFullWidthCell(14));
+        dataGrid.appendChild(row8th);
+
+        let b10Text = dataArray[8] && dataArray[8].b !== undefined && dataArray[8].b !== null ? String(dataArray[8].b).trim().toUpperCase() : '';
+        if (b10Text === '' || b10Text.includes('N/A')) {
+            row2nd.style.display = 'none';
+        }
+
+        let b11Text = dataArray[9] && dataArray[9].b !== undefined && dataArray[9].b !== null ? String(dataArray[9].b).trim().toUpperCase() : '';
+        if (b11Text === '' || b11Text.includes('N/A')) {
+            row3rd.style.display = 'none';
+        }
+
+        let b12Text = dataArray[10] && dataArray[10].b !== undefined && dataArray[10].b !== null ? String(dataArray[10].b).trim().toUpperCase() : '';
+        if (b12Text === '' || b12Text.includes('N/A')) {
+            row4th.style.display = 'none';
+        }
+
+        let b13Val = dataArray[11] && dataArray[11].b !== undefined && dataArray[11].b !== null ? String(dataArray[11].b).trim().toUpperCase() : '';
+        let b14Val = dataArray[12] && dataArray[12].b !== undefined && dataArray[12].b !== null ? String(dataArray[12].b).trim().toUpperCase() : '';
+        let b15Val = dataArray[13] && dataArray[13].b !== undefined && dataArray[13].b !== null ? String(dataArray[13].b).trim().toUpperCase() : '';
+        
+        let hasB13 = (b13Val !== '' && !b13Val.includes('N/A'));
+        let hasB15Check = (b15Val !== '' && !b15Val.includes('N/A'));
+        let isB14NA = (b14Val === '' || b14Val.includes('N/A'));
+
+        if (hasB13 && hasB15Check && isB14NA) {
+            row6th.style.display = 'none';
+        } else if (b14Val === '' || b14Val.includes('N/A')) {
+            row6th.style.display = 'none';
+        }
+
+        if (!hasB15OrB16) {
+            spacer2.style.display = 'none';
+            row7th.style.display = 'none';
+            row8th.style.display = 'none';
+
+            let b13Text = dataArray[11] && dataArray[11].b !== undefined && dataArray[11].b !== null ? String(dataArray[11].b).trim().toUpperCase() : '';
+            if (b13Text === '' || b13Text.includes('N/A')) {
+                row5th.style.display = 'none';
+            }
+
+            let b14Text = dataArray[12] && dataArray[12].b !== undefined && dataArray[12].b !== null ? String(dataArray[12].b).trim().toUpperCase() : '';
+            if (b14Text === '' || b14Text.includes('N/A')) {
+                row6th.style.display = 'none';
+            }
+        }
+    }
+
+    function toggleB4Panel() {
+        const panel = document.getElementById('b4SubPanel');
+        const cellB5 = document.getElementById('cellB5');
+        if (panel && cellB5) {
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+                cellB5.classList.remove('active-cell');
+            } else {
+                panel.style.display = 'flex';
+                cellB5.classList.add('active-cell');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
