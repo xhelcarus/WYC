@@ -251,7 +251,6 @@
     ];
 
     function showLoading() {
-        // 喺 loading 顯示前，即刻清空下方所有資訊
         document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
         document.getElementById('loadingOverlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -288,19 +287,17 @@
             const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
             const result = await response.json();
             
-            const hasGroups = renderGroupSelect(result.groups);
+            // 檢查回傳嘅團體清單係咪為空，或者係咪包含 "N/A"
+            const groups = result.groups || [];
+            const isNaOnly = groups.length === 1 && String(groups[0]).trim().toUpperCase().includes('N/A');
 
-            if (hasGroups && result.groups.length > 0) {
-                const firstGroup = result.groups[0];
-                const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
-                if (groupResponse.ok) {
-                    const groupResult = await groupResponse.json();
-                    checkAndRenderData(groupResult.data);
-                    return;
-                }
+            if (groups.length === 0 || isNaOnly) {
+                document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+                disableGroupSelect();
+            } else {
+                renderGroupSelect(groups);
+                document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
             }
-
-            checkAndRenderData(result.data);
 
         } catch (error) {
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
@@ -341,19 +338,13 @@
         defaultOption.selected = true;
         groupSelect.appendChild(defaultOption);
 
-        if (groups && groups.length > 0) {
-            groupSelect.disabled = false;
-            groups.forEach(group => {
-                let option = document.createElement('option');
-                option.value = group;
-                option.textContent = group;
-                groupSelect.appendChild(option);
-            });
-            return true;
-        } else {
-            disableGroupSelect();
-            return false;
-        }
+        groups.forEach(group => {
+            let option = document.createElement('option');
+            option.value = group;
+            option.textContent = group;
+            groupSelect.appendChild(option);
+        });
+        groupSelect.disabled = false;
     }
 
     function disableGroupSelect() {
@@ -373,7 +364,6 @@
 
         if (!dataArray || dataArray.length === 0) {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
-            disableGroupSelect();
             return;
         }
 
@@ -383,7 +373,6 @@
             
         if (firstItemB === '' || firstItemB.includes('N/A')) {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
-            disableGroupSelect();
             return;
         }
 
