@@ -251,6 +251,8 @@
     ];
 
     function showLoading() {
+        // 喺 loading 顯示前，即刻清空下方所有資訊
+        document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
         document.getElementById('loadingOverlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
@@ -324,7 +326,6 @@
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
         } finally {
             hideLoading();
-            // 揀完之後將選擇框重設或維持顯示「選擇團體」（透過重新指派 disabled 預設 option）
             document.getElementById('groupSelect').value = "";
         }
     }
@@ -333,7 +334,6 @@
         const groupSelect = document.getElementById('groupSelect');
         groupSelect.innerHTML = '';
 
-        // 永遠置頂一個被選中、且顯示「選擇團體」的 placeholder
         let defaultOption = document.createElement('option');
         defaultOption.value = "";
         defaultOption.textContent = "選擇團體";
@@ -395,8 +395,8 @@
 
         let dynamicANames = [...customANames];
         if (areB15B16NA) {
-            dynamicANames[8] = "朝早";   
-            dynamicANames[9] = "晏晝";   
+            dynamicANames[8] = "朝早";    
+            dynamicANames[9] = "晏晝";    
             dynamicANames[10] = "晏晝";  
         }
 
@@ -449,7 +449,7 @@
         row1.appendChild(cellB5);
         dataGrid.appendChild(row1);
 
-        // B4 Sub Panel (A列靠右、B列靠左，字體細一號)
+        // B4 Sub Panel
         let b4Item = dataArray[2] || { b: '' };
         let b4TextB = b4Item.b !== undefined && b4Item.b !== null ? String(b4Item.b).trim() : '';
         let b4TextA = dynamicANames[2] !== undefined ? dynamicANames[2] : '年齡';
@@ -552,31 +552,31 @@
         rowCode.appendChild(cellB2);
         dataGrid.appendChild(rowCode);
 
-        // 第 2 行：對應 B10 (dataArray[8])
+        // 第 2 行：對應 B10
         let row2nd = document.createElement('div');
         row2nd.className = 'grid-row';
         row2nd.appendChild(createFullWidthCell(8));
         dataGrid.appendChild(row2nd);
 
-        // 第 3 行：對應 B11 (dataArray[9])
+        // 第 3 行：對應 B11
         let row3rd = document.createElement('div');
         row3rd.className = 'grid-row';
         row3rd.appendChild(createFullWidthCell(9));
         dataGrid.appendChild(row3rd);
 
-        // 第 4 行：對應 B12 (dataArray[10])
+        // 第 4 行：對應 B12
         let row4th = document.createElement('div');
         row4th.className = 'grid-row';
         row4th.appendChild(createFullWidthCell(10));
         dataGrid.appendChild(row4th);
 
-        // 第 5 行：對應 B13 (dataArray[11])
+        // 第 5 行：對應 B13
         let row5th = document.createElement('div');
         row5th.className = 'grid-row';
         row5th.appendChild(createFullWidthCell(11));
         dataGrid.appendChild(row5th);
 
-        // 第 6 行：對應 B14 (dataArray[12])
+        // 第 6 行：對應 B14
         let row6th = document.createElement('div');
         row6th.className = 'grid-row';
         row6th.appendChild(createFullWidthCell(12));
@@ -586,13 +586,13 @@
         spacer2.className = 'grid-spacer';
         dataGrid.appendChild(spacer2);
 
-        // 第 7 行：對應 B15 (dataArray[13])
+        // 第 7 行：對應 B15
         let row7th = document.createElement('div');
         row7th.className = 'grid-row';
         row7th.appendChild(createFullWidthCell(13));
         dataGrid.appendChild(row7th);
 
-        // 第 8 行：對應 B16 (dataArray[14])
+        // 第 8 行：對應 B16
         let row8th = document.createElement('div');
         row8th.className = 'grid-row';
         row8th.appendChild(createFullWidthCell(14));
