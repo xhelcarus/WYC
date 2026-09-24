@@ -273,31 +273,40 @@
         document.getElementById('dateInput').value = todayString;
         onDateChange();
     }
-async function onDateChange() {
-    document.getElementById('dateInput').blur();
 
-    const dateValue = document.getElementById('dateInput').value;
-    if (!dateValue) return;
+    async function onDateChange() {
+        document.getElementById('dateInput').blur();
 
-    showLoading();
+        const dateValue = document.getElementById('dateInput').value;
+        if (!dateValue) return;
 
-    try {
-        // 只純粹拎該日嘅 group 清單同基本 data
-        const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
-        const result = await response.json();
-        
-        renderGroupSelect(result.groups);
-        
-        // 直接渲染返嗰日嘅 data，唔好自動硬性 fetch firstGroup
-        checkAndRenderData(result.data);
+        showLoading();
 
-    } catch (error) {
-        document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
-        disableGroupSelect();
-    } finally {
-        hideLoading();
+        try {
+            const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
+            const result = await response.json();
+            
+            const hasGroups = renderGroupSelect(result.groups);
+
+            if (hasGroups && result.groups.length > 0) {
+                const firstGroup = result.groups[0];
+                const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
+                if (groupResponse.ok) {
+                    const groupResult = await groupResponse.json();
+                    checkAndRenderData(groupResult.data);
+                    return;
+                }
+            }
+
+            checkAndRenderData(result.data);
+
+        } catch (error) {
+            document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            disableGroupSelect();
+        } finally {
+            hideLoading();
+        }
     }
-}
 
     async function onGroupChange() {
         const dateValue = document.getElementById('dateInput').value;
