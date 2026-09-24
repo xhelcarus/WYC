@@ -220,7 +220,7 @@
     <div class="top-row">
         <input type="date" id="dateInput" onchange="onDateChange()">
         <select id="groupSelect" onchange="onGroupChange()" disabled>
-            <option value="">選擇團體</option>
+            <option value="" disabled selected>選擇團體</option>
         </select>
     </div>
 
@@ -288,8 +288,8 @@
             
             const hasGroups = renderGroupSelect(result.groups);
 
-            if (hasGroups) {
-                const firstGroup = document.getElementById('groupSelect').value;
+            if (hasGroups && result.groups.length > 0) {
+                const firstGroup = result.groups[0];
                 const groupResponse = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(firstGroup)}`);
                 if (groupResponse.ok) {
                     const groupResult = await groupResponse.json();
@@ -302,6 +302,7 @@
 
         } catch (error) {
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            disableGroupSelect();
         } finally {
             hideLoading();
         }
@@ -323,6 +324,8 @@
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
         } finally {
             hideLoading();
+            // 揀完之後將選擇框重設或維持顯示「選擇團體」（透過重新指派 disabled 預設 option）
+            document.getElementById('groupSelect').value = "";
         }
     }
 
@@ -330,7 +333,7 @@
         const groupSelect = document.getElementById('groupSelect');
         groupSelect.innerHTML = '';
 
-        // 永遠加入一個預設顯示「選擇團體」且不能被當作常規選項選取的 placeholder
+        // 永遠置頂一個被選中、且顯示「選擇團體」的 placeholder
         let defaultOption = document.createElement('option');
         defaultOption.value = "";
         defaultOption.textContent = "選擇團體";
@@ -346,15 +349,23 @@
                 option.textContent = group;
                 groupSelect.appendChild(option);
             });
-            // 預設選中第一個實際團體（同時畫面會保持顯示「選擇團體」或者自動對應）
-            // 如果希望畫面直接顯示第一個團體名字，可以唔設 defaultOption.selected = true
-            // 依家咁做會令個盒長期顯示「選擇團體」，一按落去就會見到下面有得揀所有團體
             return true;
         } else {
-            groupSelect.disabled = true;
-            defaultOption.textContent = "當日無額外團體選項";
+            disableGroupSelect();
             return false;
         }
+    }
+
+    function disableGroupSelect() {
+        const groupSelect = document.getElementById('groupSelect');
+        groupSelect.innerHTML = '';
+        let defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "選擇團體";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        groupSelect.appendChild(defaultOption);
+        groupSelect.disabled = true;
     }
 
     function checkAndRenderData(dataArray) {
@@ -362,6 +373,7 @@
 
         if (!dataArray || dataArray.length === 0) {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            disableGroupSelect();
             return;
         }
 
@@ -371,6 +383,7 @@
             
         if (firstItemB === '' || firstItemB.includes('N/A')) {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            disableGroupSelect();
             return;
         }
 
