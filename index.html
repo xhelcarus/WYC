@@ -148,6 +148,13 @@
             font-weight: bold;
         }
 
+        .hint-box {
+            color: #4a5568;
+            padding: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
         /* A列防止被擠壓，確保標題完整顯示 */
         .col-a {
             font-weight: bold;
@@ -225,7 +232,7 @@
     </div>
 
     <div class="form-group" id="contentSection">
-        <div id="dataGrid" class="grid-layout"></div>
+        <div class="hint-box">請選擇日期以查看活動資料</div>
     </div>
 </div>
 
@@ -280,16 +287,40 @@
         const dateValue = document.getElementById('dateInput').value;
         if (!dateValue) return;
 
-        // 1. 改變日期時立刻清空畫面內容並顯示 Loading
-        document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
+        // 1. 改變日期時立刻清空畫面，顯示 Loading
+        document.getElementById('contentSection').innerHTML = '<div class="hint-box">正在檢查當日活動...</div>';
         showLoading();
 
         try {
             const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
             const result = await response.json();
             
-            renderGroupSelect(result.groups);
-            checkAndRenderData(result.data);
+            // 2. 檢查當日有沒有有效資料 (透過 data[0] 的 B2 或整體陣列)
+            if (!result.data || result.data.length === 0) {
+                document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+                disableGroupSelect();
+                return;
+            }
+
+            let firstItemB = (result.data[0] && result.data[0].b !== undefined && result.data[0].b !== null) 
+                ? String(result.data[0].b).trim().toUpperCase() 
+                : '';
+                
+            if (firstItemB === '' || firstItemB.includes('N/A')) {
+                document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+                disableGroupSelect();
+                return;
+            }
+
+            // 3. 有活動：載入團體選項 (B3)，但絕不自動預先選取，等待用家選擇
+            const hasGroups = renderGroupSelect(result.groups);
+
+            if (hasGroups) {
+                document.getElementById('contentSection').innerHTML = '<div class="hint-box">請從上方選擇團體以查看詳細資料</div>';
+            } else {
+                // 如果沒有額外分組，直接渲染預設 data
+                checkAndRenderData(result.data);
+            }
 
         } catch (error) {
             document.getElementById('contentSection').innerHTML = '<div class="no-event-box">該日沒有活動</div>';
@@ -304,7 +335,7 @@
         const groupValue = document.getElementById('groupSelect').value;
         if (!dateValue || !groupValue) return;
 
-        // 2. 改變團體時立刻清空畫面內容並顯示 Loading
+        // 4. 用家手動選擇團體後，清空畫面並讀取該團體詳細數值
         document.getElementById('contentSection').innerHTML = '<div id="dataGrid" class="grid-layout"></div>';
         showLoading();
 
@@ -326,7 +357,6 @@
         const groupSelect = document.getElementById('groupSelect');
         groupSelect.innerHTML = '';
 
-        // 永遠置頂一個被選中、且顯示「選擇團體」的 placeholder
         let defaultOption = document.createElement('option');
         defaultOption.value = "";
         defaultOption.textContent = "選擇團體";
@@ -366,17 +396,6 @@
 
         if (!dataArray || dataArray.length === 0) {
             contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
-            disableGroupSelect();
-            return;
-        }
-
-        let firstItemB = (dataArray[0] && dataArray[0].b !== undefined && dataArray[0].b !== null) 
-            ? String(dataArray[0].b).trim().toUpperCase() 
-            : '';
-            
-        if (firstItemB === '' || firstItemB.includes('N/A')) {
-            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
-            disableGroupSelect();
             return;
         }
 
