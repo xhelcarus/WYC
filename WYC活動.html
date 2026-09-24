@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏝️小島活動資料🏝️</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --text-main: #2c3e50;
+            --primary: #4a7bb0;
+            --primary-hover: #3b6392;
+            --border-color: #d1d8e0;
+            --list-bg: #f8f9fa;
+            --list-border: #e9ecef;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: var(--container-bg);
+            padding: 24px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        }
+        h2 {
+            text-align: center;
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+        /* 頂部區域：日期與按鈕左右排列，按鈕靠右 */
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        input[type="date"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fafbfc;
+            color: var(--text-main);
+            outline: none;
+            flex-shrink: 0;
+        }
+        /* 按鈕樣式，向右對齊 */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .group-btn {
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: #fafbfc;
+            color: var(--primary);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .group-btn:hover {
+            background-color: #edf2f7;
+        }
+        .group-btn.active {
+            background-color: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            font-weight: bold;
+        }
+        .group-btn:disabled {
+            border-color: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            background-color: #f7fafc;
+        }
+
+        /* 改為一行兩個項目的 Grid 排版 */
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 兩列並排 */
+            gap: 10px; /* 項目之間的間距 */
+        }
+        li {
+            padding: 12px 14px;
+            background: var(--list-bg);
+            border: 1px solid var(--list-border);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .no-event-box {
+            color: #c53030;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            grid-column: span 2; /* 讓「該日沒有活動」橫跨整行 */
+        }
+        .col-a {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 14px;
+        }
+        .col-b {
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        /* Loading 遮罩與 50% 純暗掉效果（無模糊） */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 手機螢幕較小時自動轉回單行排列，確保美觀 */
+        @media (max-width: 500px) {
+            ul {
+                grid-template-columns: 1fr;
+            }
+            .no-event-box {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading 遮罩層 (50% 暗掉) -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container">
+    <h2>🏝️小島活動資料🏝️</h2>
+    
+    <!-- 頂部：左邊日期，右邊按鈕 -->
+    <div class="top-row">
+        <input type="date" id="dateInput" onchange="onDateChange()">
+        <div id="buttonGroup" class="button-group">
+            <button class="group-btn" disabled>請先選擇日期</button>
+        </div>
+    </div>
+
+    <!-- 內容顯示區域 -->
+    <div class="form-group" id="contentSection">
+        <ul id="dataList">
+            <li>請稍候，正在載入今日資料...</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbxv0AqtVVRMGoU6wFQMRKSGxufNiPHW11k1xDd49kWAMICAuV1bqf4spRnFRnKNiu8SmA/exec';
+
+    let currentSelectedGroup = '';
+
+    // 顯示與隱藏 Loading
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // 網頁載入時自動執行
+    window.onload = function() {
+        setDefaultDateAndFetch();
+    };
+
+    // 設定日期輸入框為今天，並自動發送請求
+    function setDefaultDateAndFetch() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayString = `${yyyy}-${mm}-${dd}`;
+
+        document.getElementById('dateInput').value = todayString;
+        onDateChange();
+    }
+
+    // 當改變日期時
+    async function onDateChange() {
+        const dateValue = document.getElementById('dateInput').value;
+        if (!dateValue) return;
+
+        showLoading();
+
+        try {
+            const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}`);
+            if (!response.ok) throw new Error('網絡回應錯誤');
+            
+            const result = await response.json();
+            
+            currentSelectedGroup = result.b3 || '';
+
+            // 生成團體選擇按鈕
+            renderGroupButtons(result.groups, currentSelectedGroup);
+
+            // 檢查並渲染資料
+            checkAndRenderData(result.data);
+
+        } catch (error) {
+            console.error('讀取失敗:', error);
+            document.getElementById('contentSection').innerHTML = '<div class="no-event-box">讀取失敗，請檢查網絡</div>';
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 當點擊某個團體按鈕時
+    async function onGroupClick(groupValue) {
+        const dateValue = document.getElementById('dateInput').value;
+        if (!dateValue || !groupValue) return;
+
+        showLoading();
+
+        // 更新按鈕高亮狀態
+        const buttons = document.querySelectorAll('.group-btn');
+        buttons.forEach(btn => {
+            if (btn.textContent === groupValue) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        try {
+            const response = await fetch(`${scriptUrl}?date=${encodeURIComponent(dateValue)}&group=${encodeURIComponent(groupValue)}`);
+            if (!response.ok) throw new Error('網絡回應錯誤');
+            
+            const result = await response.json();
+            currentSelectedGroup = result.b3;
+
+            // 檢查並渲染資料
+            checkAndRenderData(result.data);
+
+        } catch (error) {
+            console.error('讀取失敗:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 渲染團體按鈕
+    function renderGroupButtons(groups, activeGroup) {
+        const buttonGroup = document.getElementById('buttonGroup');
+        buttonGroup.innerHTML = '';
+
+        if (groups && groups.length > 0) {
+            groups.forEach(group => {
+                let btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'group-btn';
+                btn.textContent = group;
+
+                if (group === activeGroup) {
+                    btn.classList.add('active');
+                }
+
+                btn.onclick = () => onGroupClick(group);
+                buttonGroup.appendChild(btn);
+            });
+        } else {
+            buttonGroup.innerHTML = '<button class="group-btn" disabled>當日無額外團體選項</button>';
+        }
+    }
+
+    // 優先檢查第一項是否為 N/A，若是則直接顯示「該日沒有活動」並終止
+    function checkAndRenderData(dataArray) {
+        const contentSection = document.getElementById('contentSection');
+
+        if (!dataArray || dataArray.length === 0) {
+            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            return;
+        }
+
+        // 取得第一項（即對應 B2，即 dataArray 的第一個元素）的 B 欄內容
+        let firstItemB = dataArray[0].b !== undefined ? String(dataArray[0].b).trim().toUpperCase() : '';
+
+        // 如果第一項包含 N/A，最高優先級判定：直接顯示「該日沒有活動」，不再看後面
+        if (firstItemB.includes('N/A')) {
+            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+            return;
+        }
+
+        // 正常顯示表格（過濾掉其他細項中可能包含的空白或 N/A）
+        contentSection.innerHTML = '<ul id="dataList"></ul>';
+        const dataList = document.getElementById('dataList');
+        
+        let validItemCount = 0;
+
+        dataArray.forEach((item, index) => {
+            let textB = item.b !== undefined ? String(item.b).trim() : '';
+            let upperTextB = textB.toUpperCase();
+
+            // 如果其他行內容包含 N/A 或空白，則跳過不顯示
+            if (upperTextB.includes('N/A') || textB === '') {
+                return;
+            }
+
+            let rowNum = index + 2;
+            let textA = item.a !== '' ? item.a : `(A${rowNum} 空白)`;
+
+            let li = document.createElement('li');
+            li.innerHTML = `<span class="col-a">${textA}</span> <span class="col-b">${textB}</span>`;
+            dataList.appendChild(li);
+            validItemCount++;
+        });
+
+        if (validItemCount === 0) {
+            contentSection.innerHTML = '<div class="no-event-box">該日沒有活動</div>';
+        }
+    }
+</script>
+
+</body>
+</html>
